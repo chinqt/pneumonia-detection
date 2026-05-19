@@ -15,8 +15,6 @@ st.set_page_config(
 # ─── Download Model from Google Drive ──────────────────────────
 @st.cache_resource
 def load_model():
-@st.cache_resource
-def load_model():
     model_path = 'pneumonia_model.onnx'
     
     if not os.path.exists(model_path):
