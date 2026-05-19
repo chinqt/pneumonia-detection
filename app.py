@@ -1,8 +1,8 @@
 import streamlit as st
 import numpy as np
 from PIL import Image
-import gdown
 import os
+import urllib.request
 import onnxruntime as ort
 
 # ─── Page Config ───────────────────────────────────────────────
