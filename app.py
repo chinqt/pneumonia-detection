@@ -1,9 +1,9 @@
 import streamlit as st
-import tensorflow as tf
 import numpy as np
 from PIL import Image
 import gdown
 import os
+import onnxruntime as ort
 
 # ─── Page Config ───────────────────────────────────────────────
 st.set_page_config(
@@ -15,17 +15,17 @@ st.set_page_config(
 # ─── Download Model from Google Drive ──────────────────────────
 @st.cache_resource
 def load_model():
-    model_path = 'resnet50_pneumonia_final.keras'
+    model_path = 'pneumonia_model.onnx'
     
     if not os.path.exists(model_path):
         with st.spinner("Downloading model... please wait"):
-            url = 'https://drive.google.com/uc?id=1xdN_BSK68brr7HvF4hNQTpdF2zqKndpP'
-            gdown.download(url, model_path, quiet=False)
+            url = 'https://drive.google.com/uc?id=1WmjS8YkklUdUyUdVzvbHWkQ6KjMbGh5Q'
+            gdown.download(url, model_path, quiet=False, fuzzy=True)
     
-    model = tf.keras.models.load_model(model_path)
-    return model
+    session = ort.InferenceSession(model_path)
+    return session
 
-model = load_model()
+session = load_model()
 
 # ─── ImageNet Normalization ─────────────────────────────────────
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
@@ -34,7 +34,7 @@ IMAGENET_STD  = [0.229, 0.224, 0.225]
 def preprocess_image(img):
     img = img.resize((128, 128))
     img = img.convert('RGB')
-    img_array = np.array(img) / 255.0
+    img_array = np.array(img).astype(np.float32) / 255.0
     img_array[:, :, 0] = (img_array[:, :, 0] - IMAGENET_MEAN[0]) / IMAGENET_STD[0]
     img_array[:, :, 1] = (img_array[:, :, 1] - IMAGENET_MEAN[1]) / IMAGENET_STD[1]
     img_array[:, :, 2] = (img_array[:, :, 2] - IMAGENET_MEAN[2]) / IMAGENET_STD[2]
@@ -67,7 +67,9 @@ if uploaded_file is not None:
         
         with st.spinner("Analyzing X-Ray..."):
             processed = preprocess_image(img)
-            prediction = model.predict(processed)[0][0]
+            input_name = session.get_inputs()[0].name
+            output_name = session.get_outputs()[0].name
+            prediction = session.run([output_name], {input_name: processed})[0][0][0]
         
         if prediction > 0.5:
             confidence = prediction * 100
