@@ -15,12 +15,16 @@ st.set_page_config(
 # ─── Download Model from Google Drive ──────────────────────────
 @st.cache_resource
 def load_model():
+@st.cache_resource
+def load_model():
     model_path = 'pneumonia_model.onnx'
     
     if not os.path.exists(model_path):
         with st.spinner("Downloading model... please wait"):
-            url = 'https://drive.google.com/uc?id=1WmjS8YkklUdUyUdVzvbHWkQ6KjMbGh5Q'
-            gdown.download(url, model_path, quiet=False, fuzzy=True)
+            import urllib.request
+            file_id = '1WmjS8YkklUdUyUdVzvbHWkQ6KjMbGh5Q'
+            url = f'https://drive.google.com/uc?export=download&id={file_id}&confirm=t'
+            urllib.request.urlretrieve(url, model_path)
     
     session = ort.InferenceSession(model_path)
     return session
